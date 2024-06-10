@@ -12,7 +12,8 @@ export const getEmployees = async () => {
 
 export const getEmployeeByBirthdate = async (dateofbirth: string) => {
   const employeesSnapshot = await employeesCollection
-    .where("dateofbirth", "==", dateofbirth)
+    .where("dateofbirth", ">=", dateofbirth)
+    .where("dateofbirth", "<=", dateofbirth)
     .get();
   if (!employeesSnapshot.empty) {
     return employeesSnapshot.docs[0].data() as TEmployee;

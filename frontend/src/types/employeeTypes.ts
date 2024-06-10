@@ -9,5 +9,5 @@ export type TEmployee = {
   district: string;
   name: string;
   dateofexpairy: firestore.Timestamp;
-  canton: string;
+  subdistrict: string;
 };

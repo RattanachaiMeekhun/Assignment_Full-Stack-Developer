@@ -1,17 +1,28 @@
-import { Button, Card, DatePicker, Space, Table, TableProps } from "antd";
+import {
+  Button,
+  DatePicker,
+  Modal,
+  Space,
+  Table,
+  TableProps,
+  Typography,
+} from "antd";
 import { getEmployees } from "../services/employeeServices";
 import { useEffect, useState } from "react";
 import { TEmployee } from "../types/employeeTypes";
 import { SearchOutlined } from "@ant-design/icons";
 import { FilterDropdownProps } from "antd/es/table/interface";
 import dayjs from "dayjs";
-
+import { checkExpireDate } from "../helper/dateHelper";
+import EmployeeForm from "../components/forms/EmployeeForm";
+const { RangePicker } = DatePicker;
+const { Text } = Typography;
 type Props = {};
-
-type DataIndex = keyof TEmployee;
 
 const Home = (props: Props) => {
   const [empData, setEmpData] = useState([]);
+  const [modal, contextHolder] = Modal.useModal();
+
   useEffect(() => {
     fetch();
   }, []);
@@ -30,6 +41,11 @@ const Home = (props: Props) => {
       title: "นามสกุล",
       dataIndex: "surname",
       key: "surname",
+    },
+    {
+      title: "เพศ",
+      dataIndex: "gender",
+      key: "gender",
     },
     {
       title: "วันเกิด",
@@ -51,12 +67,23 @@ const Home = (props: Props) => {
             }}
             onKeyDown={(e) => e.stopPropagation()}
           >
-            <DatePicker
+            <RangePicker
               onChange={(e, dateString) => {
                 if (!Array.isArray(dateString)) {
                   setSelectedKeys(dateString ? [dateString] : []);
                 }
               }}
+              format={"YYYY-MM-DD"}
+              presets={[
+                {
+                  label: "Today",
+                  value: [dayjs(), dayjs()],
+                },
+                {
+                  label: "This month",
+                  value: [dayjs().startOf("month"), dayjs().endOf("month")],
+                },
+              ]}
             />
             <Space>
               <Button
@@ -100,15 +127,66 @@ const Home = (props: Props) => {
         <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
       ),
     },
+    {
+      title: "จังหวัด",
+      dataIndex: "province",
+      key: "province",
+    },
+    {
+      title: "อำเภอ",
+      dataIndex: "district",
+      key: "district",
+    },
+    {
+      title: "ตำบล",
+      dataIndex: "subdistrict",
+      key: "subdistrict",
+    },
+    {
+      title: "ที่อยู่",
+      dataIndex: "address",
+      key: "address",
+    },
+    {
+      title: "วันที่บัตรหมดอายุ",
+      dataIndex: "dateofexpairy",
+      key: "dateofexpairy",
+      render: (_) => {
+        return <Text type={checkExpireDate(_)}>{_}</Text>;
+      },
+    },
   ];
   const fetch = async () => {
     const emps = await getEmployees();
     setEmpData(emps);
   };
+
+  const onEditDataClick = (action: string) => {
+    modal.confirm({
+      title: action,
+      icon: <></>,
+      width: "40%",
+      type: "confirm",
+      content: <EmployeeForm />,
+    });
+  };
+
   return (
-    <div>
-      <Table dataSource={empData} columns={columns} />
-    </div>
+    <>
+      {contextHolder}
+      <div style={{ padding: 10, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: 10, display: "flex", justifyContent: "end" }}>
+          <Button
+            onClick={() => {
+              onEditDataClick("Add");
+            }}
+          >
+            เพิ่มพนักงาน
+          </Button>
+        </div>
+        <Table dataSource={empData} columns={columns} />
+      </div>
+    </>
   );
 };
 

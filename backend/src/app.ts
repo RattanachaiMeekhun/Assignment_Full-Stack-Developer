@@ -1,5 +1,6 @@
 import express from "express";
 import employeeRoutes from "./routes/employeeRoutes";
+import mstDataRoutes from "./routes/mstDataRoutes";
 const cors = require("cors");
 
 export const app = express();
@@ -11,3 +12,4 @@ app.use(
   })
 );
 app.use("/api", employeeRoutes);
+app.use("/api", mstDataRoutes);
