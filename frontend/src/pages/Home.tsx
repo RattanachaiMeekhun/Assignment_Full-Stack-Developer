@@ -6,22 +6,36 @@ import {
   Table,
   TableProps,
   Typography,
+  notification,
 } from "antd";
-import { getEmployees } from "../services/employeeServices";
+import {
+  createEmployee,
+  delEmployee,
+  getEmployees,
+  updateEmployee,
+} from "../services/employeeServices";
 import { useEffect, useState } from "react";
 import { TEmployee } from "../types/employeeTypes";
-import { SearchOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { FilterDropdownProps } from "antd/es/table/interface";
 import dayjs from "dayjs";
 import { checkExpireDate } from "../helper/dateHelper";
 import EmployeeForm from "../components/forms/EmployeeForm";
+import { useForm } from "antd/es/form/Form";
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
-type Props = {};
 
-const Home = (props: Props) => {
+type NotificationType = "success" | "info" | "warning" | "error";
+
+const Home = () => {
   const [empData, setEmpData] = useState([]);
-  const [modal, contextHolder] = Modal.useModal();
+  const [modal, modalcontextHolder] = Modal.useModal();
+  const [form] = useForm<TEmployee>();
+  const [notifi, notifiContextHolder] = notification.useNotification();
 
   useEffect(() => {
     fetch();
@@ -73,7 +87,7 @@ const Home = (props: Props) => {
                   setSelectedKeys(dateString ? [dateString] : []);
                 }
               }}
-              format={"YYYY-MM-DD"}
+              format={"DD-MM-YYYY"}
               presets={[
                 {
                   label: "Today",
@@ -118,6 +132,8 @@ const Home = (props: Props) => {
         );
       },
       onFilter: (value, record) => {
+        console.log(record);
+
         return record["dateofbirth"]
           .toString()
           .toLowerCase()
@@ -126,6 +142,7 @@ const Home = (props: Props) => {
       filterIcon: (filtered: boolean) => (
         <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
       ),
+      render: (dateofbirth) => <>{dayjs(dateofbirth).format("DD-MM-YYYY")}</>,
     },
     {
       title: "จังหวัด",
@@ -151,8 +168,35 @@ const Home = (props: Props) => {
       title: "วันที่บัตรหมดอายุ",
       dataIndex: "dateofexpairy",
       key: "dateofexpairy",
-      render: (_) => {
-        return <Text type={checkExpireDate(_)}>{_}</Text>;
+      sorter: (a, b) =>
+        dayjs(a.dateofexpairy).diff(dayjs()) -
+        dayjs(b.dateofexpairy).diff(dayjs()),
+      render: (dateofexpairy) => {
+        return (
+          <Text type={checkExpireDate(dateofexpairy)}>
+            {dayjs(dateofexpairy).format("DD-MM-YYYY")}
+          </Text>
+        );
+      },
+    },
+    {
+      title: "",
+      dataIndex: "",
+      key: "actions",
+      render: (_, rowData) => {
+        return (
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => onEditDataClick("Edit", rowData)}
+            />
+            <Button
+              icon={
+                <DeleteOutlined onClick={() => onDeleteDataClick(rowData.id)} />
+              }
+            />
+          </div>
+        );
       },
     },
   ];
@@ -161,19 +205,68 @@ const Home = (props: Props) => {
     setEmpData(emps);
   };
 
-  const onEditDataClick = (action: string) => {
+  const onEditDataClick = (action: "Edit" | "Add", rowData?: TEmployee) => {
+    form.resetFields();
+
+    if (rowData) {
+      rowData.dateofbirth = dayjs(rowData.dateofbirth);
+      rowData.dateofexpairy = dayjs(rowData.dateofexpairy);
+
+      form.setFieldsValue({ ...rowData });
+    }
     modal.confirm({
       title: action,
       icon: <></>,
+      centered: true,
       width: "40%",
       type: "confirm",
-      content: <EmployeeForm />,
+      content: <EmployeeForm form={form} />,
+      onOk: () => onSubmit(action),
+    });
+  };
+
+  const onDeleteDataClick = async (id: string) => {
+    const res = await delEmployee(id);
+    if (res.id) {
+      fetch();
+      openNotificationWithIcon("success", "Success", res.message);
+    } else {
+      openNotificationWithIcon("error", "Error", res.message);
+    }
+  };
+
+  const onSubmit = async (action: "Edit" | "Add") => {
+    let res = undefined;
+
+    if (action === "Add") {
+      res = await createEmployee(form.getFieldsValue());
+    } else {
+      res = await updateEmployee(form.getFieldsValue());
+    }
+
+    if (res.id) {
+      fetch();
+      openNotificationWithIcon("success", "Success", res.message);
+    } else {
+      openNotificationWithIcon("error", "Error", res.message);
+    }
+  };
+
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    title: string,
+    message: string
+  ) => {
+    notifi[type]({
+      message: title,
+      description: message,
     });
   };
 
   return (
     <>
-      {contextHolder}
+      {modalcontextHolder}
+      {notifiContextHolder}
       <div style={{ padding: 10, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: 10, display: "flex", justifyContent: "end" }}>
           <Button

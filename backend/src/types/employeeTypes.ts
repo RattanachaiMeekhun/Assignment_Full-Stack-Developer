@@ -1,6 +1,5 @@
-import { firestore } from "firebase-admin";
-
 export type TEmployee = {
+  id: string;
   dateofbirth: string;
   address: string;
   gender: string;
@@ -8,6 +7,6 @@ export type TEmployee = {
   surname: string;
   district: string;
   name: string;
-  dateofexpairy: firestore.Timestamp;
-  canton: string;
+  dateofexpairy: string;
+  subdistrict: string;
 };

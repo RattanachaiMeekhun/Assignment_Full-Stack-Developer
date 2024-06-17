@@ -1,13 +1,14 @@
-import { firestore } from "firebase-admin";
+import dayjs from "dayjs";
 
 export type TEmployee = {
-  dateofbirth: string;
+  id: string;
+  dateofbirth: string | dayjs.Dayjs;
   address: string;
   gender: string;
   province: string;
   surname: string;
   district: string;
   name: string;
-  dateofexpairy: firestore.Timestamp;
+  dateofexpairy: string | dayjs.Dayjs;
   subdistrict: string;
 };
