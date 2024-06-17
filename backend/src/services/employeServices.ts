@@ -1,25 +1,12 @@
+import { firestore } from "firebase-admin";
 import { employeesCollection } from "../config/firestoreCollections";
-import { TEmployee } from "../types/employeeTypes";
+import { TEmployee, TFilters } from "../types/employeeTypes";
+import { transformEmployeeSnapshot } from "../helper/employeeHelper";
 
 export const getEmployees = async () => {
   const employeesSnapshot = await employeesCollection.get();
-  const employees: TEmployee[] = [];
-  employeesSnapshot.forEach((doc) => {
-    const empData: TEmployee = { id: doc.id, ...(doc.data() as any) };
-    employees.push(empData);
-  });
+  const employees: TEmployee[] = transformEmployeeSnapshot(employeesSnapshot);
   return employees;
-};
-
-export const getEmployeeByBirthdate = async (dateofbirth: string) => {
-  const employeesSnapshot = await employeesCollection
-    .where("dateofbirth", ">=", dateofbirth)
-    .where("dateofbirth", "<=", dateofbirth)
-    .get();
-  if (!employeesSnapshot.empty) {
-    return employeesSnapshot.docs[0].data() as TEmployee;
-  }
-  return null;
 };
 
 export const createEmployee = async (employeeData: TEmployee) => {
@@ -47,4 +34,21 @@ export const delEmployee = async (id: string) => {
   } catch (error) {
     return { success: false };
   }
+};
+
+export const getDataToExport = async (filters: TFilters) => {
+  let query: firestore.Query<firestore.DocumentData> = employeesCollection;
+  if (filters.dateofbirth) {
+    query = query
+      .where("dateofbirth", ">=", filters.dateofbirth[0])
+      .where("dateofbirth", "<=", filters.dateofbirth[1]);
+  }
+  if (filters.dateofexpairy) {
+    query = query
+      .where("dateofexpairy", ">=", filters.dateofexpairy[0])
+      .where("dateofexpairy", "<=", filters.dateofexpairy[1]);
+  }
+  const employeesSnapshot = await query.get();
+  const employees = transformEmployeeSnapshot(employeesSnapshot);
+  return employees;
 };

@@ -1,4 +1,4 @@
-import { TEmployee } from "../types/employeeTypes";
+import { TEmployee, TFilters } from "../types/employeeTypes";
 
 export const getEmployees = async () => {
   const response = await fetch("http://localhost:3000/api/employees")
@@ -7,7 +7,7 @@ export const getEmployees = async () => {
       return data;
     })
     .catch((err) => {
-      console.log(err);
+      console.error(err);
     });
 
   return response;
@@ -26,7 +26,7 @@ export const createEmployee = async (formData: TEmployee) => {
       return data;
     })
     .catch((err) => {
-      console.log(err);
+      console.error(err);
     });
 
   return response;
@@ -45,7 +45,7 @@ export const updateEmployee = async (formData: TEmployee) => {
       return data;
     })
     .catch((err) => {
-      console.log(err);
+      console.error(err);
     });
 
   return response;
@@ -63,8 +63,34 @@ export const delEmployee = async (id: string) => {
       return data;
     })
     .catch((err) => {
-      console.log(err);
+      console.error(err);
     });
 
   return response;
+};
+
+export const exportFile = async (filters: TFilters) => {
+  const response = await fetch(`http://localhost:3000/api/exportdata`, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(filters),
+  });
+  if (response.status === 404) {
+    return { message: "No data found for the given filters" };
+  }
+
+  try {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "employees.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error("Error exporting CSV:", error);
+  }
 };

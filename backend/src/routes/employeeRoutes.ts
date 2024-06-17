@@ -2,40 +2,24 @@ import express, { Request, Response } from "express";
 import {
   createEmployee,
   delEmployee,
-  getEmployeeByBirthdate,
+  getDataToExport as getFiltedData,
   getEmployees,
   updateEmployee,
 } from "../services/employeServices";
+import { TFilters } from "../types/employeeTypes";
+const { Parser } = require("json2csv");
 
 const router = express.Router();
 
 router.get("/employees", async (req: Request, res: Response) => {
   try {
     const responseData = await getEmployees();
-    res.json(responseData);
+
+    res.status(200).json(responseData);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-router.get(
-  "/employees/dateofbirth/:dateofbirth",
-  async (req: Request, res: Response) => {
-    const dateofbirth = req.params.dateofbirth;
-
-    try {
-      const responseData = await getEmployeeByBirthdate(dateofbirth);
-
-      if (responseData) {
-        res.status(200).json(responseData);
-      } else {
-        res.status(404).json({ message: "Employee not found" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
 
 router.post("/createemployee", async (req: Request, res: Response) => {
   try {
@@ -80,6 +64,23 @@ router.put("/delemployee/:id", async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/exportdata", async (req: Request, res: Response) => {
+  const filters: TFilters = req.body || {};
+  const responseData = await getFiltedData(filters);
+  console.log(responseData);
+
+  if (responseData.length > 0) {
+    const json2csvParser = new Parser();
+    const csv = json2csvParser.parse(responseData);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("employees.csv");
+    res.send(csv);
+  } else {
+    return res.status(404).json({ message: "No data found." });
   }
 });
 
