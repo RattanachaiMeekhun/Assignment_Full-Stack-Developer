@@ -1,15 +1,20 @@
 import { firestore } from "firebase-admin";
 import { employeesCollection } from "../config/firestoreCollections";
-import { TEmployee, TFilters } from "../types/employeeTypes";
+import {
+  TEmployeeDto,
+  TEmployeeRequest,
+  TFilters,
+} from "../types/employeeTypes";
 import { transformEmployeeSnapshot } from "../helper/employeeHelper";
 
 export const getEmployees = async () => {
   const employeesSnapshot = await employeesCollection.get();
-  const employees: TEmployee[] = transformEmployeeSnapshot(employeesSnapshot);
+  const employees: TEmployeeDto[] =
+    transformEmployeeSnapshot(employeesSnapshot);
   return employees;
 };
 
-export const createEmployee = async (employeeData: TEmployee) => {
+export const createEmployee = async (employeeData: TEmployeeDto) => {
   try {
     const docRef = await employeesCollection.add(employeeData);
     return { success: true, id: docRef.id };
@@ -18,10 +23,27 @@ export const createEmployee = async (employeeData: TEmployee) => {
   }
 };
 
-export const updateEmployee = async (employeeData: TEmployee) => {
+export const updateEmployee = async (employeeData: TEmployeeDto) => {
   try {
-    await employeesCollection.doc(employeeData.id).update(employeeData);
-    return { success: true, id: employeeData.id };
+    let updateData: TEmployeeRequest = {
+      id: employeeData.id,
+      dateofbirth: firestore.Timestamp.fromDate(
+        new Date(employeeData.dateofbirth)
+      ),
+      address: employeeData.address,
+      gender: employeeData.gender,
+      province: employeeData.province,
+      surname: employeeData.surname,
+      district: employeeData.district,
+      name: employeeData.name,
+      dateofexpairy: firestore.Timestamp.fromDate(
+        new Date(employeeData.dateofexpairy)
+      ),
+      subdistrict: employeeData.subdistrict,
+    };
+
+    await employeesCollection.doc(updateData.id).update(updateData);
+    return { success: true, id: updateData.id };
   } catch (error) {
     return { success: false };
   }
@@ -36,19 +58,35 @@ export const delEmployee = async (id: string) => {
   }
 };
 
-export const getDataToExport = async (filters: TFilters) => {
+export const getFiltedData = async (filters: TFilters) => {
   let query: firestore.Query<firestore.DocumentData> = employeesCollection;
   if (filters.dateofbirth) {
-    query = query
-      .where("dateofbirth", ">=", filters.dateofbirth[0])
-      .where("dateofbirth", "<=", filters.dateofbirth[1]);
+    const startDate = new Date(filters.dateofbirth[0]);
+    const endDate = new Date(filters.dateofbirth[1]);
+
+    if (
+      startDate.toString() !== "Invalid Date" &&
+      endDate.toString() !== "Invalid Date"
+    ) {
+      query = query
+        .where("dateofbirth", ">", firestore.Timestamp.fromDate(startDate))
+        .where("dateofbirth", "<", firestore.Timestamp.fromDate(endDate));
+    }
   }
   if (filters.dateofexpairy) {
+    const startDate = new Date(filters.dateofexpairy[0]);
+    const endDate = new Date(filters.dateofexpairy[1]);
+
     query = query
-      .where("dateofexpairy", ">=", filters.dateofexpairy[0])
-      .where("dateofexpairy", "<=", filters.dateofexpairy[1]);
+      .where("dateofbirth", ">", firestore.Timestamp.fromDate(startDate))
+      .where("dateofbirth", "<", firestore.Timestamp.fromDate(endDate));
   }
+
   const employeesSnapshot = await query.get();
-  const employees = transformEmployeeSnapshot(employeesSnapshot);
-  return employees;
+  if (!employeesSnapshot.empty) {
+    const employees = transformEmployeeSnapshot(employeesSnapshot);
+    return employees;
+  }
+
+  return [];
 };

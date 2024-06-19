@@ -1,7 +1,17 @@
-import { TEmployee, TFilters } from "../types/employeeTypes";
+import {
+  TEmployeeDto,
+  TEmployeeRequest,
+  TFilters,
+} from "../types/employeeTypes";
 
-export const getEmployees = async () => {
-  const response = await fetch("http://localhost:3000/api/employees")
+export const getEmployees = async (filters: TFilters) => {
+  const response = await fetch("http://localhost:3000/api/employees", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(filters),
+  })
     .then((e) => e.json())
     .then((data) => {
       return data;
@@ -13,7 +23,7 @@ export const getEmployees = async () => {
   return response;
 };
 
-export const createEmployee = async (formData: TEmployee) => {
+export const createEmployee = async (formData: TEmployeeRequest) => {
   const response = await fetch("http://localhost:3000/api/createemployee", {
     method: "POST",
     headers: {
@@ -32,7 +42,7 @@ export const createEmployee = async (formData: TEmployee) => {
   return response;
 };
 
-export const updateEmployee = async (formData: TEmployee) => {
+export const updateEmployee = async (formData: TEmployeeRequest) => {
   const response = await fetch("http://localhost:3000/api/updateEmployee", {
     method: "PUT",
     headers: {

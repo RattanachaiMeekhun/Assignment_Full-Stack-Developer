@@ -17,7 +17,7 @@ import {
   updateEmployee,
 } from "../services/employeeServices";
 import { useEffect, useState } from "react";
-import { TEmployee } from "../types/employeeTypes";
+import { TEmployeeDto, TEmployeeRequest } from "../types/employeeTypes";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -33,19 +33,21 @@ const { Text } = Typography;
 
 type NotificationType = "success" | "info" | "warning" | "error";
 
-type DataIndex = keyof TEmployee;
+type DataIndex = keyof TEmployeeDto;
 const Home = () => {
   const [empData, setEmpData] = useState([]);
   const [modal, modalcontextHolder] = Modal.useModal();
-  const [form] = useForm<TEmployee>();
+  const [form] = useForm<TEmployeeDto>();
   const [notifi, notifiContextHolder] = notification.useNotification();
   const [filterValues, setFilterValues] = useState<any>({});
 
   useEffect(() => {
-    fetch();
+    fetch(filterValues);
   }, []);
 
   const handleReset = (clearFilters: () => void) => {
+    fetch({});
+    setFilterValues({});
     clearFilters();
   };
 
@@ -54,15 +56,18 @@ const Home = () => {
     confirm: FilterDropdownProps["confirm"],
     dataIndex: DataIndex
   ) => {
+    console.log(selectedKeys);
+
     let values: any = filterValues;
     values[dataIndex] = selectedKeys;
+    fetch(values);
     setFilterValues(values);
     confirm();
   };
 
   const getColumnSearchProps = (
     dataIndex: DataIndex
-  ): TableColumnType<TEmployee> => ({
+  ): TableColumnType<TEmployeeDto> => ({
     filterDropdown({
       setSelectedKeys,
       confirm,
@@ -84,7 +89,6 @@ const Home = () => {
             onChange={(e, dateString) => {
               setSelectedKeys(dateString);
             }}
-            format={"DD-MM-YYYY"}
             presets={[
               {
                 label: "Today",
@@ -128,18 +132,12 @@ const Home = () => {
         </div>
       );
     },
-    onFilter: (value, record) => {
-      return record["dateofbirth"]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase());
-    },
     filterIcon: (filtered: boolean) => (
       <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
     ),
   });
 
-  const columns: TableProps<TEmployee>["columns"] = [
+  const columns: TableProps<TEmployeeDto>["columns"] = [
     {
       title: "ชื่อ",
       dataIndex: "name",
@@ -221,12 +219,12 @@ const Home = () => {
       },
     },
   ];
-  const fetch = async () => {
-    const emps = await getEmployees();
+  const fetch = async (filterValues: any) => {
+    const emps = await getEmployees(filterValues);
     setEmpData(emps);
   };
 
-  const onEditDataClick = (action: "Edit" | "Add", rowData?: TEmployee) => {
+  const onEditDataClick = (action: "Edit" | "Add", rowData?: TEmployeeDto) => {
     form.resetFields();
 
     if (rowData) {
@@ -249,7 +247,7 @@ const Home = () => {
   const onDeleteDataClick = async (id: string) => {
     const res = await delEmployee(id);
     if (res.id) {
-      fetch();
+      fetch(filterValues);
       openNotificationWithIcon("success", "Success", res.message);
     } else {
       openNotificationWithIcon("error", "Error", res.message);
@@ -258,15 +256,21 @@ const Home = () => {
 
   const onSubmit = async (action: "Edit" | "Add") => {
     let res = undefined;
+    const fieldsValue = form.getFieldsValue();
+    let formData: TEmployeeRequest = {
+      ...fieldsValue,
+      dateofbirth: fieldsValue.dateofbirth.toDate(),
+      dateofexpairy: fieldsValue.dateofexpairy.toDate(),
+    };
 
     if (action === "Add") {
-      res = await createEmployee(form.getFieldsValue());
+      res = await createEmployee(formData);
     } else {
-      res = await updateEmployee(form.getFieldsValue());
+      res = await updateEmployee(formData);
     }
 
     if (res.id) {
-      fetch();
+      fetch(filterValues);
       openNotificationWithIcon("success", "Success", res.message);
     } else {
       openNotificationWithIcon("error", "Error", res.message);

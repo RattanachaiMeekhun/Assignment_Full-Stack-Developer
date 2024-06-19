@@ -1,5 +1,5 @@
 import { firestore } from "firebase-admin";
-import { TEmployee } from "../types/employeeTypes";
+import { TEmployeeDto } from "../types/employeeTypes";
 
 export const transformEmployeeSnapshot = (
   employeesSnapshot: firestore.QuerySnapshot<
@@ -7,7 +7,7 @@ export const transformEmployeeSnapshot = (
     firestore.DocumentData
   >
 ) => {
-  const employees: TEmployee[] = [];
+  const employees: TEmployeeDto[] = [];
   employeesSnapshot.forEach((doc) => {
     let data = doc.data();
 
@@ -21,7 +21,7 @@ export const transformEmployeeSnapshot = (
       data.dateofexpairy = data.dateofexpairy.toDate();
     }
 
-    const empData: TEmployee = { id: doc.id, ...(data as any) };
+    const empData: TEmployeeDto = { id: doc.id, ...(data as any) };
     employees.push(empData);
   });
   return employees;

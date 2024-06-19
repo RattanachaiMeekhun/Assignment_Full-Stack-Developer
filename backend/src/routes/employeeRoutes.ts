@@ -2,8 +2,7 @@ import express, { Request, Response } from "express";
 import {
   createEmployee,
   delEmployee,
-  getDataToExport as getFiltedData,
-  getEmployees,
+  getFiltedData,
   updateEmployee,
 } from "../services/employeServices";
 import { TFilters } from "../types/employeeTypes";
@@ -11,12 +10,15 @@ const { Parser } = require("json2csv");
 
 const router = express.Router();
 
-router.get("/employees", async (req: Request, res: Response) => {
+router.post("/employees", async (req: Request, res: Response) => {
   try {
-    const responseData = await getEmployees();
+    const filters: TFilters = req.body || {};
+    const responseData = await getFiltedData(filters);
 
     res.status(200).json(responseData);
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -70,7 +72,6 @@ router.put("/delemployee/:id", async (req: Request, res: Response) => {
 router.post("/exportdata", async (req: Request, res: Response) => {
   const filters: TFilters = req.body || {};
   const responseData = await getFiltedData(filters);
-  console.log(responseData);
 
   if (responseData.length > 0) {
     const json2csvParser = new Parser();

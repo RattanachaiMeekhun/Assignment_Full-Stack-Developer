@@ -1,12 +1,12 @@
-import { DatePicker, Form, Input, Select } from "antd";
+import { DatePicker, Form, Input, Radio, Select } from "antd";
 import { FormInstance, useForm } from "antd/es/form/Form";
 import { useEffect, useState } from "react";
-import { TEmployee } from "../../types/employeeTypes";
+import { TEmployeeDto } from "../../types/employeeTypes";
 import { getProvinceDatas } from "../../services/mstDataServices";
 import { District, Province, SubDistrict } from "../../types/mstTypes";
 import TextArea from "antd/es/input/TextArea";
 type Props = {
-  form: FormInstance<TEmployee>;
+  form: FormInstance<TEmployeeDto>;
 };
 const EmployeeForm = ({ form }: Props) => {
   const [mstProvinceData, setMstProvinceData] = useState<Province[]>([]);
@@ -44,7 +44,10 @@ const EmployeeForm = ({ form }: Props) => {
     };
   }, []);
 
-  const onFormValueChange = (changeValue: TEmployee, allValues: TEmployee) => {
+  const onFormValueChange = (
+    changeValue: TEmployeeDto,
+    allValues: TEmployeeDto
+  ) => {
     if (changeValue?.province) {
       const newDistricts =
         mstProvinceData.find((e) => e.name === allValues["province"])
@@ -71,13 +74,19 @@ const EmployeeForm = ({ form }: Props) => {
       onValuesChange={onFormValueChange}
     >
       <Form.Item name="id" hidden />
-      <Form.Item name="name" label="ชื่อ">
+      <Form.Item name="name" label="ชื่อ" required>
         <Input placeholder="ชื่อ" />
       </Form.Item>
-      <Form.Item name="surname" label="นามสกุล">
+      <Form.Item name="surname" label="นามสกุล" required>
         <Input placeholder="นามสกุล" />
       </Form.Item>
-      <Form.Item name="province" label="จังหวัด">
+      <Form.Item name="gender" label="เพศ" required>
+        <Radio.Group>
+          <Radio value={"ชาย"}>ชาย</Radio>
+          <Radio value={"หญิง"}>หญิง</Radio>
+        </Radio.Group>
+      </Form.Item>
+      <Form.Item name="province" label="จังหวัด" required>
         <Select
           placeholder="จังหวัด"
           options={mstProvinceData.map((e) => {
@@ -86,7 +95,7 @@ const EmployeeForm = ({ form }: Props) => {
           showSearch
         />
       </Form.Item>
-      <Form.Item name="district" label="อำเภอ">
+      <Form.Item name="district" label="อำเภอ" required>
         <Select
           placeholder="อำเภอ"
           options={districts.map((e) => {
@@ -95,7 +104,7 @@ const EmployeeForm = ({ form }: Props) => {
           showSearch
         />
       </Form.Item>
-      <Form.Item name="subdistrict" label="ตำบล">
+      <Form.Item name="subdistrict" label="ตำบล" required>
         <Select
           placeholder="ตำบล"
           options={subdistricts.map((e) => {
@@ -104,14 +113,14 @@ const EmployeeForm = ({ form }: Props) => {
           showSearch
         />
       </Form.Item>
-      <Form.Item name="address" label="ที่อยู่">
+      <Form.Item name="address" label="ที่อยู่" required>
         <TextArea placeholder={"ที่อยู่"} rows={4} />
       </Form.Item>
-      <Form.Item name="dateofbirth" label="วันเกิด">
-        <DatePicker placeholder={"วันเกิด"} format={"DD-MM-YYYY"} />
+      <Form.Item name="dateofbirth" label="วันเกิด" required>
+        <DatePicker placeholder={"วันเกิด"} />
       </Form.Item>
-      <Form.Item name="dateofexpairy" label="วันที่บัตรหมดอายุ">
-        <DatePicker placeholder={"วันที่บัตรหมดอายุ"} format={"DD-MM-YYYY"} />
+      <Form.Item name="dateofexpairy" label="วันที่บัตรหมดอายุ" required>
+        <DatePicker placeholder={"วันที่บัตรหมดอายุ"} />
       </Form.Item>
     </Form>
   );
